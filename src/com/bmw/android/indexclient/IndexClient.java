@@ -20,13 +20,14 @@ import com.bmw.android.indexservice.BSearchService;
 
 public class IndexClient {
 	private static String TAG = "com.bmw.android.indexclient.IndexClient";
-	private Socket socket;
+	public static final int QUERY_BOOLEAN = 0;
+	public static final int QUERY_STANDARD = 1;
 	private BSearchService mService = null;
 	private boolean mIsBound;
 	private String filePath;
 
-	private static final int SERVERPORT = 6002;
 	private IndexListener listener;
+
 
 	public IndexClient(IndexListener listener, final Context c, String filePath) {
 		this.listener = listener;
@@ -99,6 +100,13 @@ public class IndexClient {
 
 	public void buildIndex(final String filePath,
 			final ArrayList<String> contents) {
+		/** TODO - Tell client if the index is unbuildable due to the lock being in place.
+		 * 		Will not be able to send Strings in contents that are larger than 256KB 
+		 * 		In the event of this, it should either try to send them as-is and hope it 
+		 * 		does not crash (theoretically it should be able to send up to 1MB, but I found
+		 * 		that sending that much would cause a crash), or split up the page into multiple parts and send them separately
+		 * **/
+		
 		new Thread(new Runnable() {
 
 			@Override
@@ -126,26 +134,6 @@ public class IndexClient {
 				}
 			}
 		}).start();
-		/*
-		 * final String path = filePath.replaceAll(" ", "\\_");
-		 * 
-		 * new Thread(new Runnable() {
-		 * 
-		 * @Override public void run() {
-		 * 
-		 * try { do { InetAddress serverAddr = InetAddress.getLocalHost();
-		 * socket = new Socket(serverAddr, SERVERPORT); } while
-		 * (socket.isClosed()); PrintWriter out = new PrintWriter(new
-		 * BufferedWriter( new OutputStreamWriter(socket.getOutputStream())),
-		 * true); out.println("build " + path); out.flush(); ObjectOutputStream
-		 * oos = new ObjectOutputStream(socket.getOutputStream());
-		 * oos.writeObject(contents); oos.flush(); out.close(); oos.close();
-		 * socket.close(); } catch (UnknownHostException e1) {
-		 * e1.printStackTrace(); } catch (IOException e1) {
-		 * e1.printStackTrace(); }
-		 * 
-		 * } }).start();
-		 */
 	}
 
 	public void loadIndex(final String filePath) {
@@ -157,9 +145,8 @@ public class IndexClient {
 						+ " Service " + mService);
 				try {
 					if (listener != null) {
-						boolean loaded = mService.load(filePath);
-
-						listener.indexLoaded(filePath, loaded);
+						Log.e(TAG, "Trying to load from service " + mService);
+						listener.indexLoaded(filePath, mService.load(filePath));
 					} else {
 						mService.load(filePath);
 					}
@@ -169,83 +156,40 @@ public class IndexClient {
 				}
 			}
 		}).start();
-		/*
-		 * final String path = filePath.replaceAll(" ", "\\_"); new Thread(new
-		 * Runnable() {
-		 * 
-		 * @Override public void run() {
-		 * 
-		 * try { do { InetAddress serverAddr = InetAddress.getLocalHost();
-		 * socket = new Socket(serverAddr, SERVERPORT); } while
-		 * (socket.isClosed()); PrintWriter out = new PrintWriter(new
-		 * BufferedWriter( new OutputStreamWriter(socket.getOutputStream())),
-		 * true); out.println("load " + path); out.flush(); BufferedReader in =
-		 * new BufferedReader( new InputStreamReader(socket.getInputStream()));
-		 * String response = null; while (response == null && in.ready()) {
-		 * response = in.readLine(); } boolean loaded = false; if (response !=
-		 * null) { if (response.equals("load true")) { loaded = true; } } if
-		 * (listener != null) listener.indexLoaded(filePath, loaded);
-		 * 
-		 * out.close(); in.close(); socket.close(); } catch
-		 * (UnknownHostException e1) { e1.printStackTrace(); } catch
-		 * (IOException e1) { e1.printStackTrace(); }
-		 * 
-		 * } }).start();
-		 */
 	}
 
 	public void unloadIndex(final String filePath) {
-		/*
-		 * final String path = filePath.replaceAll(" ", "\\_"); new Thread(new
-		 * Runnable() {
-		 * 
-		 * @Override public void run() {
-		 * 
-		 * try { do { InetAddress serverAddr = InetAddress.getLocalHost();
-		 * socket = new Socket(serverAddr, SERVERPORT); } while
-		 * (socket.isClosed()); PrintWriter out = new PrintWriter(new
-		 * BufferedWriter( new OutputStreamWriter(socket.getOutputStream())),
-		 * true); out.println("unload " + path); out.flush(); out.close();
-		 * socket.close(); } catch (UnknownHostException e1) {
-		 * e1.printStackTrace(); } catch (IOException e1) {
-		 * e1.printStackTrace(); }
-		 * 
-		 * } }).start();
-		 */
-	}
-
-	public void search(final String text, final String filePath,
-			final int variance) {
-		/*
-		 * final String path = filePath.replaceAll(" ", "\\_"); new Thread(new
-		 * Runnable() {
-		 * 
-		 * @Override public void run() { try { do { InetAddress serverAddr =
-		 * InetAddress.getLocalHost(); socket = new Socket(serverAddr,
-		 * SERVERPORT); } while (socket.isClosed()); PrintWriter out = new
-		 * PrintWriter(new BufferedWriter( new
-		 * OutputStreamWriter(socket.getOutputStream())), true);
-		 * out.println("search " + text + " " + path + " " + variance);
-		 * out.flush(); ObjectInputStream in = new ObjectInputStream(socket
-		 * .getInputStream()); try { List<Result> results = (List<Result>)
-		 * in.readObject(); listener.searchCompleted(text, results); } catch
-		 * (ClassNotFoundException e) { e.printStackTrace();
-		 * listener.errorWhileSearching(text, filePath); } in.close();
-		 * out.close(); socket.close(); } catch (UnknownHostException e1) {
-		 * e1.printStackTrace(); } catch (IOException e1) {
-		 * e1.printStackTrace(); }
-		 * 
-		 * } }).start();
-		 */
-	}
-
-	public void quickSearch(final String text, final String filePath) {
 		new Thread(new Runnable() {
 
 			@Override
 			public void run() {
 				try {
-					listener.searchCompleted(text, mService.find(text));
+					listener.indexUnloaded(filePath, mService.unload(filePath));
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}).start();
+	}
+	
+	public void search(final String text, final String filePath){
+		this.search(text, filePath, 0, 10);
+	}
+	
+	public void search(final String text, final String filePath, int hits){
+		this.search(text, filePath, 0, hits);
+	}
+
+	public void search(final String text, final String filePath, final int page, final int hits) {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					Log.i(TAG, "Searching for " + text);
+					listener.searchCompleted(text, mService.find(filePath, IndexClient.QUERY_BOOLEAN, text, hits, page));
+					Log.i(TAG, "Done Searching for " + text);
 				} catch (RemoteException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -253,27 +197,5 @@ public class IndexClient {
 				}
 			}
 		}).start();
-		/*
-		 * final String path = filePath.replaceAll(" ", "\\_"); new Thread(new
-		 * Runnable() {
-		 * 
-		 * @Override public void run() {
-		 * 
-		 * try { do { InetAddress serverAddr = InetAddress.getLocalHost();
-		 * socket = new Socket(serverAddr, SERVERPORT); } while
-		 * (socket.isClosed()); PrintWriter out = new PrintWriter(new
-		 * BufferedWriter( new OutputStreamWriter(socket.getOutputStream())),
-		 * true); out.println("qsearch " + text + " " + path); out.flush();
-		 * ObjectInputStream in = new ObjectInputStream(
-		 * socket.getInputStream()); try { boolean[] results = (boolean[])
-		 * in.readObject(); listener.searchCompleted(text, results); } catch
-		 * (ClassNotFoundException e) { e.printStackTrace();
-		 * listener.errorWhileSearching(text, filePath); } in.close();
-		 * out.close(); socket.close(); } catch (UnknownHostException e1) {
-		 * e1.printStackTrace(); } catch (IOException e1) {
-		 * e1.printStackTrace(); }
-		 * 
-		 * } }).start();
-		 */
 	}
 }

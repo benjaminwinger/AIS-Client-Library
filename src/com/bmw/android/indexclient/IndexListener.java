@@ -6,8 +6,8 @@ import com.bmw.android.indexdata.Result;
 
 public interface IndexListener {
 	public void indexCreated(String path);
-	public void indexLoaded(String path, boolean loaded);
-	public void searchCompleted(String text, boolean[] pages);
+	public void indexLoaded(String path, int loaded);
+	public void indexUnloaded(String path, boolean unloaded);
 	public void searchCompleted(String text, List<Result> results);
 	public void errorWhileSearching(String text, String index);
 }
