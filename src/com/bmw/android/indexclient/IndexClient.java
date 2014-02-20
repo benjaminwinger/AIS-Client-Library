@@ -1,10 +1,27 @@
+/**
+ *  Copyright 2014 Benjamin Winger
+ *  
+ *  This file is part of The Android Indexing Service Client Library.
+ *
+ *   The Android Indexing Service Client Library is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU Lesser General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   The Android Indexing Service Client Library is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU Lesser General Public License for more details.
+ *
+ *   You should have received a copy of the GNU Lesser General Public License
+ *   along with The Android Indexing Service Client Library.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package com.bmw.android.indexclient;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,13 +33,13 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.bmw.android.indexservice.BSearchService;
+import com.bmw.android.indexservice.BSearchService1_0;
 
 public class IndexClient {
 	private static String TAG = "com.bmw.android.indexclient.IndexClient";
 	public static final int QUERY_BOOLEAN = 0;
 	public static final int QUERY_STANDARD = 1;
-	private BSearchService mService = null;
+	private BSearchService1_0 mService = null;
 	private boolean mIsBound;
 	private String filePath;
 
@@ -86,7 +103,7 @@ public class IndexClient {
 			// Following the example above for an AIDL interface,
 			// this gets an instance of the IRemoteInterface, which we can use
 			// to call on the service
-			mService = BSearchService.Stub.asInterface(service);
+			mService = BSearchService1_0.Stub.asInterface(service);
 			Log.i(TAG, "Service: " + mService);
 			loadIndex(filePath);
 		}
