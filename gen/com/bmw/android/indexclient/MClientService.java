@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: /home/benjamin/workspace/IndexClient/src/com/bmw/android/indexclient/MClientService.aidl
+ * Original file: /home/benjamin/git/IndexClient/src/com/bmw/android/indexclient/MClientService.aidl
  */
 package com.bmw.android.indexclient;
 public interface MClientService extends android.os.IInterface
