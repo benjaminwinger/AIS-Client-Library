@@ -1,42 +1,24 @@
 /*******************************************************************************
  * Copyright 2014 Benjamin Winger.
- * 
- * This file is part of IndexClient.
- * 
- * IndexClient is free software: you can redistribute it and/or modify
- * it under the terms of the Lesser GNU General Public License as published by
+ *
+ * This file is part of Android Indexing Service Client Library.
+ *
+ * Android Indexing Service Client Library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
- * IndexClient is distributed in the hope that it will be useful,
+ *
+ * Android Indexing Service Client Library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * Lesser GNU General Public License for more details.
- * 
- * You should have received a copy of the Lesser GNU General Public License
- * along with The Android Indexing Service.  If not, see <http://www.gnu.org/licenses/>.
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Android Indexing Service Client Library.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-/**
- *  Copyright 2014 Benjamin Winger
- *  
- *  This file is part of The Android Indexing Service Client Library.
- *
- *   The Android Indexing Service Client Library is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU Lesser General Public License as published by
- *   the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   The Android Indexing Service Client Library is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU Lesser General Public License for more details.
- *
- *   You should have received a copy of the GNU Lesser General Public License
- *   along with The Android Indexing Service Client Library.  If not, see <http://www.gnu.org/licenses/>.
- */
-package com.bmw.android.indexclient;
 
-import java.util.List;
+
+package com.bmw.android.indexclient;
 
 import android.app.Service;
 import android.content.Intent;
@@ -44,7 +26,6 @@ import android.os.IBinder;
 
 /**
  * @author benjamin
- *
  */
 public abstract class ClientService extends Service {
 
@@ -56,30 +37,39 @@ public abstract class ClientService extends Service {
 			return this.getWords(path);
 		}
 	};*/
-	
+
 	/**
 	 * Load libraries to access the file here so that it only has to be done once.
-	 * This will always be the first function called 
+	 * Only load information specific to each file. Generic loading should be done in
+	 * the onCreate function
+	 * This will always be the first function called
+	 *
 	 * @param path - the path of the file to be loaded
 	 */
 	public abstract void loadFile(String path);
-	
+
 	/**
 	 * The indexer will query the contents of each page one at a time.
 	 * Sending all of the information at once is too large to transfer in some files.
+	 *
 	 * @param page - the page of the file to be returned
 	 * @return - A string containing all of the words on the page
 	 */
 	public abstract String getWordsForPage(int page);
-	
+
 	/**
-	 * 
 	 * @return - the number of pages in the file specified at loadFile(String path)
 	 */
 	public abstract int getPageCount();
-	
-	public ClientService() {
-		
+
+
+	/*
+		Load as much as possible in the constructor as the loadFile function may
+		be called multiple times.
+	 */
+	@Override
+	public void onCreate() {
+
 	}
 
 	@Override
