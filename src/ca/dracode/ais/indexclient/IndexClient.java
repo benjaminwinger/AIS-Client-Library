@@ -1,20 +1,20 @@
 /*******************************************************************************
  * Copyright 2014 Benjamin Winger.
  *
- * This file is part of Android Indexing Service Client Library.
+ * This file is part of AIS Client Library.
  *
- * Android Indexing Service Client Library is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * AIS Client Library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Android Indexing Service Client Library is distributed in the hope that it will be useful,
+ * AIS Client Library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Android Indexing Service Client Library.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with AIS Client Library.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
 
@@ -41,7 +41,7 @@ import ca.dracode.ais.service.BSearchService1_0;
 public class IndexClient {
 	public static final int QUERY_BOOLEAN = 0;
 	public static final int QUERY_STANDARD = 1;
-	private static String TAG = "com.bmw.android.indexclient.IndexClient";
+	private static String TAG = "ca.dracode.ais.indexclient.IndexClient";
 	private BSearchService1_0 mService = null;
 	private boolean mIsBound;
 	private String filePath;
@@ -71,6 +71,10 @@ public class IndexClient {
 		this.filePath = filePath;
 		doBindService(c);
 	}
+
+    public boolean isServiceConnected(){
+        return mIsBound;
+    }
 
 	public static void createServiceFile(String dir, String name,
 	                                     List<String> extensions) {
@@ -108,7 +112,7 @@ public class IndexClient {
 		// supporting component replacement by other applications).
 		Log.i(TAG, "Binding to service...");
 		mIsBound = c.bindService(new Intent(
-						"com.bmw.android.indexservice.SEARCH"), mConnection,
+						"ca.dracode.ais.service.IndexService.SEARCH"), mConnection,
 				Context.BIND_AUTO_CREATE
 		);
 		Log.i(TAG, "Service is bound = " + mIsBound);
@@ -200,11 +204,11 @@ public class IndexClient {
 	}
 
 	public void search(final String text, final String filePath, boolean kill) {
-		this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, 10, kill);
+		this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, 10, 0, kill);
 	}
 
 	public void search(final String text, final String filePath, int hits, boolean kill) {
-		this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, hits, kill);
+		this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, hits, 0, kill);
 	}
 
 	public void cancelSearch(){
@@ -215,7 +219,8 @@ public class IndexClient {
 		}
 	}
 
-	public void search(final String text, final int type, final String filePath, final int page, final int hits, boolean kill) {
+	public void search(final String text, final int type, final String filePath, final int page,
+                       final int hits, final int set, boolean kill) {
 		if(kill && t != null){
 			cancelSearch();
 			try {
@@ -230,7 +235,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					PageResult[] results = mService.find(filePath, type, text, hits, page);
+					PageResult[] results = mService.find(filePath, type, text, hits, page, set);
 					if(results != null)
 					listener.searchCompleted(text, results);
 					Log.i(TAG, "Done Searching for " + text);
@@ -244,7 +249,8 @@ public class IndexClient {
 		t.start();
 	}
 
-	public void searchIn(final String text, final int type, final List<String> filePath, final int hits, boolean kill){
+	public void searchIn(final String text, final int type, final List<String> filePath,
+                         final int hits, final int set, boolean kill){
 		if(kill && t != null){
 			cancelSearch();
 			try {
@@ -259,7 +265,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					PageResult[] results = mService.findIn(filePath, type, text, hits);
+					PageResult[] results = mService.findIn(filePath, type, text, hits, set);
 					if(results != null) {
 						listener.searchCompleted(text, results);
 					}
@@ -274,7 +280,8 @@ public class IndexClient {
 		t.start();
 	}
 
-	public void searchInPath(final String text, final int type, final List<String> filePath, final int hits, boolean kill){
+	public void searchInPath(final String text, final int type, final List<String> filePath,
+                             final int hits, final int set, boolean kill){
 		if(kill && t != null){
 			cancelSearch();
 			try {
@@ -289,7 +296,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					List<String> list = mService.findName(filePath, type, text, hits);
+					List<String> list = mService.findName(filePath, type, text, hits, set);
 					if(list != null)
 					listener.searchCompleted(text, list);
 					Log.i(TAG, "Done Searching for " + text);
