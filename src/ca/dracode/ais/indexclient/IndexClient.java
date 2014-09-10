@@ -50,9 +50,6 @@ public class IndexClient {
 	private ServiceConnection mConnection = new ServiceConnection() {
 		// Called when the connection with the service is established
 		public void onServiceConnected(ComponentName className, IBinder service) {
-			// Following the example above for an AIDL interface,
-			// this gets an instance of the IRemoteInterface, which we can use
-			// to call on the service
 			mService = BSearchService1_0.Stub.asInterface(service);
 			Log.i(TAG, "Service: " + mService);
 			loadIndex(filePath);
@@ -106,10 +103,7 @@ public class IndexClient {
 	}
 
 	void doBindService(Context c) {
-		// Establish a connection with the service. We use an explicit
-		// class name because we want a specific service implementation that
-		// we know will be running in our own process (and thus won't be
-		// supporting component replacement by other applications).
+		// Establish a connection with the service. 
 		Log.i(TAG, "Binding to service...");
 		mIsBound = c.bindService(new Intent(
 						"ca.dracode.ais.service.IndexService.SEARCH"), mConnection,
