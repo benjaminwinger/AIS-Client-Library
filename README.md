@@ -26,6 +26,9 @@ The current version of AIS Client Library includes the following features:
 * Searching file content in a single file using boolean or fuzzy search
 * Searching file content in multiple files using boolean or fuzzy search
 * Searching file names in multiple files using boolean or fuzzy search
+* Manually calling for a file to be indexed if for some reason it was not already
+* Checking if the Client Library was able to connect to the search service
+* Cancelling searches that are in progress
 
 ## Known Issues ##
 none.
