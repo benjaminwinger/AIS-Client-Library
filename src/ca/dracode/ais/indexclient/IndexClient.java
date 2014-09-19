@@ -74,9 +74,12 @@ public class IndexClient {
     }
 
 	public static void createServiceFile(String dir, String name,
-	                                     List<String> extensions) {
+	                                     List<String> extensions, String fileName) {
+        if(fileName == null){
+            fileName = "Service";
+        }
 		Log.i(TAG, "Creating folder: " + dir + new File(dir).mkdirs());
-		if (!new File(dir + "/Service.is").exists()) {
+		if (!new File(dir + "/" + fileName + ".is").exists()) {
 			BufferedWriter bw = null;
 			try {
 
@@ -103,7 +106,7 @@ public class IndexClient {
 	}
 
 	void doBindService(Context c) {
-		// Establish a connection with the service. 
+		// Establish a connection with the service.
 		Log.i(TAG, "Binding to service...");
 		mIsBound = c.bindService(new Intent(
 						"ca.dracode.ais.service.IndexService.SEARCH"), mConnection,

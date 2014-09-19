@@ -20,14 +20,13 @@
 
 package ca.dracode.ais.indexclient;
 
-import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
 /**
  * @author benjamin
  */
-public abstract class ClientService extends Service {
+public interface ClientService {
 
 	/**
 	 * Template
@@ -46,7 +45,7 @@ public abstract class ClientService extends Service {
 	 *
 	 * @param path - the path of the file to be loaded
 	 */
-	public abstract void loadFile(String path);
+	public void loadFile(String path);
 
 	/**
 	 * The indexer will query the contents of each page one at a time.
@@ -55,26 +54,19 @@ public abstract class ClientService extends Service {
 	 * @param page - the page of the file to be returned
 	 * @return - A string containing all of the words on the page
 	 */
-	public abstract String getWordsForPage(int page);
+	public String getWordsForPage(int page);
 
 	/**
 	 * @return - the number of pages in the file specified at loadFile(String path)
 	 */
-	public abstract int getPageCount();
+	public int getPageCount();
 
 
 	/*
 		Load as much as possible in the constructor as the loadFile function may
 		be called multiple times.
 	 */
-	@Override
-	public void onCreate() {
+	public void onCreate();
 
-	}
-
-	@Override
-	public IBinder onBind(Intent i) {
-		return null;
-	}
-
+	public IBinder onBind(Intent i);
 }
