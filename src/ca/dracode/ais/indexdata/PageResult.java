@@ -43,9 +43,6 @@ public class PageResult implements Parcelable {
 			return new PageResult[size];
 		}
 	};
-	/**
-	 *
-	 */
 	private static final long serialVersionUID = -2204743540787327738L;
 	public List<String> text;
 	public int page;

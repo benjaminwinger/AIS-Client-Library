@@ -39,75 +39,101 @@ import ca.dracode.ais.indexdata.PageResult;
 import ca.dracode.ais.service.BSearchService1_0;
 
 public class IndexClient {
+    /**
+     * ID for a search that requires the exact text input to exist
+     */
 	public static final int QUERY_BOOLEAN = 0;
+    /**
+     * ID for a fuzzy search
+     */
 	public static final int QUERY_STANDARD = 1;
 	private static String TAG = "ca.dracode.ais.indexclient.IndexClient";
 	private BSearchService1_0 mService = null;
 	private boolean mIsBound;
-	private String filePath;
-	private Thread t;
+	private List<String> filePaths;
+    private int id;
+    private ServiceConnection mConnection = new ServiceConnection() {
+        // Called when the connection with the service is established
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mService = BSearchService1_0.Stub.asInterface(service);
+            try {
+                id = mService.getId();
+            } catch(RemoteException e){
+                Log.e(TAG, "Error", e);
+            }
+            listener.connectedToService();
+            Log.i(TAG, "Service: " + mService);
+        }
 
-	private ServiceConnection mConnection = new ServiceConnection() {
-		// Called when the connection with the service is established
-		public void onServiceConnected(ComponentName className, IBinder service) {
-			mService = BSearchService1_0.Stub.asInterface(service);
-			Log.i(TAG, "Service: " + mService);
-			loadIndex(filePath);
-		}
-
-		// Called when the connection with the service disconnects unexpectedly
-		public void onServiceDisconnected(ComponentName className) {
+        // Called when the connection with the service disconnects unexpectedly
+        public void onServiceDisconnected(ComponentName className) {
 			Log.e(TAG, "Service has unexpectedly disconnected");
+            listener.disconnectedFromService();
 			mService = null;
 		}
 	};
-	private IndexListener listener;
+    private Thread t;
+    private IndexListener listener;
 
-	public IndexClient(IndexListener listener, final Context c, String filePath) {
-		this.listener = listener;
-		this.filePath = filePath;
-		doBindService(c);
+    /**
+     * @param listener The activity that implements IndexListener to react to search results
+     * @param context
+     */
+    public IndexClient(IndexListener listener, Context context) {
+        this.listener = listener;
+        this.filePaths = new ArrayList<String>();
+		doBindService(context);
 	}
 
-    public boolean isServiceConnected(){
+    /**
+     * @param dir Directory inside which the service file will be created
+     * @param name The name of the service that the file describes
+     * @param extensions The extensions that the service file will contain
+     * @param fileName The name of the service file
+     */
+    public static void createServiceFile(String dir, String name,
+                                         List<String> extensions, String fileName) {
+        if(fileName == null) {
+            fileName = "Service";
+        }
+        Log.i(TAG, "Creating folder: " + dir + new File(dir).mkdirs());
+        if(!new File(dir + "/" + fileName + ".is").exists()) {
+            BufferedWriter bw = null;
+            try {
+
+                bw = new BufferedWriter(new FileWriter(dir + "/Service.is"));
+            } catch(IOException e) {
+                Log.e(TAG, "Error while creating writer: ", e);
+                e.printStackTrace();
+            }
+            if(bw != null) {
+                try {
+                    bw.write(name);
+                    bw.newLine();
+                    for(int i = 0; i < extensions.size(); i++) {
+                        bw.write(extensions.get(i));
+                        bw.newLine();
+                    }
+                    bw.close();
+                } catch(IOException e) {
+                    Log.e(TAG, "Error while writing: ", e);
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks if the client is still connected to the service
+     * @return true if the client has connected to the indexing service, false otherwise
+     */
+    public boolean isServiceConnected() {
         return mIsBound;
     }
 
-	public static void createServiceFile(String dir, String name,
-	                                     List<String> extensions, String fileName) {
-        if(fileName == null){
-            fileName = "Service";
-        }
-		Log.i(TAG, "Creating folder: " + dir + new File(dir).mkdirs());
-		if (!new File(dir + "/" + fileName + ".is").exists()) {
-			BufferedWriter bw = null;
-			try {
-
-				bw = new BufferedWriter(new FileWriter(dir + "/Service.is"));
-			} catch (IOException e) {
-				Log.e(TAG, "Error while creating writer: ", e);
-				e.printStackTrace();
-			}
-			if (bw != null) {
-				try {
-					bw.write(name);
-					bw.newLine();
-					for (int i = 0; i < extensions.size(); i++) {
-						bw.write(extensions.get(i));
-						bw.newLine();
-					}
-					bw.close();
-				} catch (IOException e) {
-					Log.e(TAG, "Error while writing: ", e);
-					e.printStackTrace();
-				}
-			}
-		}
-	}
-
-	void doBindService(Context c) {
-		// Establish a connection with the service.
-		Log.i(TAG, "Binding to service...");
+    private void doBindService(Context c) {
+        // Establish a connection with the service.
+        Log.i(TAG, "Binding to service...");
 		mIsBound = c.bindService(new Intent(
 						"ca.dracode.ais.service.IndexService.SEARCH"), mConnection,
 				Context.BIND_AUTO_CREATE
@@ -115,21 +141,41 @@ public class IndexClient {
 		Log.i(TAG, "Service is bound = " + mIsBound);
 	}
 
-	public void close(Context c, String filePath){
-		this.unloadIndex(filePath);
-		this.doUnbindService(c);
+    /**
+     * Tells the search service to unload the files loaded by this IndexClient and disconnects
+     * from the SearchService
+     * @param context
+     */
+    public void close(Context context) {
+        for(String s : filePaths) {
+            this.unloadIndex(s);
+        }
+		this.doUnbindService(context);
 	}
 
-	private void doUnbindService(Context c) {
+    /**
+     * Disconnects the client from the SearchService
+     * @param context
+     */
+	private void doUnbindService(Context context) {
 		if (mIsBound) {
 			// Detach our existing connection.
-			c.unbindService(mConnection);
+			context.unbindService(mConnection);
 			mIsBound = false;
 		}
 	}
 
-	public void buildIndex(final String filePath,
-	                       final ArrayList<String> contents) {
+    /**
+     * Tells the searchService to build a specific file
+     * <p>
+     *     To be used only in the case that the file is not already in the index
+     *     In most cases the file will have already been indexed by the indexer.
+     * </p>
+     * @param filePath Path of the file to be indexed
+     * @param contents Contents of the file split by page in the form of an List
+     */
+    public void buildIndex(final String filePath,
+                           final List<String> contents) {
 		/** TODO - Tell client if the index is unbuildable due to the lock being in place.
 		 * 		Will not be able to send Strings in contents that are larger than 256KB 
 		 * 		In the event of this, it should either try to send them as-is and hope it 
@@ -165,8 +211,12 @@ public class IndexClient {
 		}).start();
 	}
 
-	public void loadIndex(final String filePath) {
-		new Thread(new Runnable() {
+    /**
+     * Tells the SearchService to load the index at filePath
+     * @param filePath The path of the file to be loaded
+     */
+    public void loadIndex(final String filePath) {
+        new Thread(new Runnable() {
 
 			@Override
 			public void run() {
@@ -184,10 +234,15 @@ public class IndexClient {
 				}
 			}
 		}).start();
+        this.filePaths.add(filePath);
 	}
 
-	public void unloadIndex(final String filePath) {
-		new Thread(new Runnable() {
+    /**
+     * Tells the SearchService to unload the file
+     * @param filePath Path of the file to be unloaded
+     */
+    public void unloadIndex(final String filePath) {
+        new Thread(new Runnable() {
 
 			@Override
 			public void run() {
@@ -198,28 +253,56 @@ public class IndexClient {
 				}
 			}
 		}).start();
+        this.filePaths.remove(filePath);
 	}
 
-	public void search(final String text, final String filePath, boolean kill) {
-		this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, 10, 0, kill);
+    /**
+     * Calls for a single file search
+     * @param text Text search query
+     * @param filePath Path of the file to be searched
+     * @param kill If true, cancels previous searches before searching
+     */
+    public void search(final String text, final String filePath, boolean kill) {
+        this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, 10, 0, kill);
 	}
 
-	public void search(final String text, final String filePath, int hits, boolean kill) {
-		this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, hits, 0, kill);
+    /**
+     * Calls for a single file search
+     * @param text Text search query
+     * @param filePath Path of the file to be searched
+     * @param hits Maximum results to be generated
+     * @param kill If true, cancels previous searches before searching
+     */
+    public void search(final String text, final String filePath, int hits, boolean kill) {
+        this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, hits, 0, kill);
 	}
 
-	public void cancelSearch(){
-		try{
-			mService.interrupt();
+    /**
+     * Cancels any searches that are in operation
+     */
+    public void cancelSearch(int id) {
+        try {
+            mService.interrupt(id);
 		} catch (RemoteException e){
 			Log.e(TAG, "Error while canceling search", e);
 		}
 	}
 
-	public void search(final String text, final int type, final String filePath, final int page,
+    /**
+     * Calls for a single file search
+     * @param text Text search query
+     * @param type Type of search; one of QUERY_BOOLEAN or QUERY_STANDARD
+     * @param filePath Path of the file to be searched
+     * @param page Page on which to begin the search
+     * @param hits Maximum results to be generated
+     * @param set Set number, where searching for set n gives results from set*hits to set*hits +
+     *            hits
+     * @param kill If true, cancels previous searches before searching
+     */
+    public void search(final String text, final int type, final String filePath, final int page,
                        final int hits, final int set, boolean kill) {
 		if(kill && t != null){
-			cancelSearch();
+			cancelSearch(id);
 			try {
 				while (t != null) Thread.sleep(1);
 			} catch (InterruptedException e){
@@ -232,7 +315,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					PageResult[] results = mService.find(filePath, type, text, hits, page, set);
+					PageResult[] results = mService.find(id, filePath, type, text, hits, page, set);
 					if(results != null)
 					listener.searchCompleted(text, results);
 					Log.i(TAG, "Done Searching for " + text);
@@ -246,10 +329,20 @@ public class IndexClient {
 		t.start();
 	}
 
-	public void searchIn(final String text, final int type, final List<String> filePath,
+    /**
+     * Calls for a single file search
+     * @param text Text search query
+     * @param type Type of search; one of QUERY_BOOLEAN or QUERY_STANDARD
+     * @param filePath Path of the file to be searched
+     * @param hits Maximum results to be generated
+     * @param set Set number, where searching for set n gives results from set*hits to set*hits +
+     *            hits
+     * @param kill If true, cancels previous searches before searching
+     */
+    public void searchIn(final String text, final int type, final List<String> filePath,
                          final int hits, final int set, boolean kill){
 		if(kill && t != null){
-			cancelSearch();
+			cancelSearch(id);
 			try {
 				while (t != null) Thread.sleep(1);
 			} catch (InterruptedException e){
@@ -262,7 +355,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					PageResult[] results = mService.findIn(filePath, type, text, hits, set);
+					PageResult[] results = mService.findIn(id, filePath, type, text, hits, set);
 					if(results != null) {
 						listener.searchCompleted(text, results);
 					}
@@ -277,10 +370,20 @@ public class IndexClient {
 		t.start();
 	}
 
-	public void searchInPath(final String text, final int type, final List<String> filePath,
+    /**
+     * Calls for a multi-file search
+     * @param text Text search query
+     * @param type Type of search; one of QUERY_BOOLEAN or QUERY_STANDARD
+     * @param filePath Path of the file to be searched
+     * @param hits Maximum results to be generated
+     * @param set Set number, where searching for set n gives results from set*hits to set*hits +
+     *            hits
+     * @param kill If true, cancels previous searches before searching
+     */
+    public void searchInPath(final String text, final int type, final List<String> filePath,
                              final int hits, final int set, boolean kill){
 		if(kill && t != null){
-			cancelSearch();
+			cancelSearch(id);
 			try {
 				while (t != null) Thread.sleep(1);
 			} catch (InterruptedException e){
@@ -293,7 +396,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					List<String> list = mService.findName(filePath, type, text, hits, set);
+					List<String> list = mService.findName(id, filePath, type, text, hits, set);
 					if(list != null)
 					listener.searchCompleted(text, list);
 					Log.i(TAG, "Done Searching for " + text);

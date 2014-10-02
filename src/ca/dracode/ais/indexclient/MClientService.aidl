@@ -36,7 +36,7 @@ interface MClientService {
 	String getWordsForPage(int page);
 	
 	/**
-	 * 
+	 * Gets the number of pages in the file previously specified in loadFile(String path)
 	 * @return - the number of pages in the file specified at loadFile(String path)
 	 */
 	int getPageCount();

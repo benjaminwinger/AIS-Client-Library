@@ -1,1 +1,1 @@
-/home/benjamin/workspace/android-indexing-service/src/ca/dracode/ais/service/BSearchService1_0.aidl
+../../../../../../Android-Indexing-Service/src/ca/dracode/ais/service/BSearchService1_0.aidl

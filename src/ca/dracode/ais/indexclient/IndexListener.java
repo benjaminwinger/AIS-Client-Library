@@ -21,18 +21,63 @@
 package ca.dracode.ais.indexclient;
 
 import java.util.List;
+
 import ca.dracode.ais.indexdata.PageResult;
 
 public interface IndexListener {
-	public void indexCreated(String path);
+    /**
+     * Called when an index has been created using the IndexClient.buildIndex() function
+     * @param path Path for the file added to the index
+     */
+    public void indexCreated(String path);
 
-	public void indexLoaded(String path, int loaded);
+    /**
+     * Called when a file has been loaded or has failed to be loaded by the Service
+     * @param path Path for the file
+     * @param loaded 0 if the file exists in the index and was not already loaded;
+     *	 			1 if the file was already loaded;
+     *			2 if the file was not loaded and does not exist in the index;
+     *			-1 if there was an error
+     */
+    public void indexLoaded(String path, int loaded);
 
-	public void indexUnloaded(String path, boolean unloaded);
+    /**
+     * Called when a file was unloaded by the Service
+     * @param path Path for the file
+     * @param unloaded true if the file was previously loaded, false otherwise
+     */
+    public void indexUnloaded(String path, boolean unloaded);
 
-	public void searchCompleted(String text, PageResult[] pageResults);
+    /**
+     * Called when the SearchService has completed a content search
+     * @param text The term that was originally searched for
+     * @param pageResults A list of search results
+     */
+    public void searchCompleted(String text, PageResult[] pageResults);
 
-	public void searchCompleted(String text, List<String> results);
+    /**
+     * Called when the SearchService has completed a filename search
+     * @param text The term that was originally searched for
+     * @param results A list of search results
+     */
+    public void searchCompleted(String text, List<String> results);
 
-	public void errorWhileSearching(String text, String index);
+    /**
+     * Called if there was an unexpected error while searching
+     * @param text The term that was originally searched for
+     * @param index File that was being searched
+     */
+    public void errorWhileSearching(String text, String index);
+
+    /**
+     * Called when the IndexClient has connected to the ClientService; Files can now be loaded
+     * and searches can now be made
+     */
+    public void connectedToService();
+
+    /**
+     * Called when the IndexClient has disconnected from the ClientService,
+     * the ClientService should now be disposed of
+     */
+    public void disconnectedFromService();
 }
