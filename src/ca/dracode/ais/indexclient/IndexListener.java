@@ -22,7 +22,7 @@ package ca.dracode.ais.indexclient;
 
 import java.util.List;
 
-import ca.dracode.ais.indexdata.PageResult;
+import ca.dracode.ais.indexdata.SearchResult;
 
 public interface IndexListener {
     /**
@@ -53,7 +53,7 @@ public interface IndexListener {
      * @param text The term that was originally searched for
      * @param pageResults A list of search results
      */
-    public void searchCompleted(String text, PageResult[] pageResults);
+    public void searchCompleted(String text, SearchResult pageResults);
 
     /**
      * Called when the SearchService has completed a filename search

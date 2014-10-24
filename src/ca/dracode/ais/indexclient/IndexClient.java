@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import ca.dracode.ais.indexdata.PageResult;
+import ca.dracode.ais.indexdata.SearchResult;
 import ca.dracode.ais.service.BSearchService1_0;
 
 public class IndexClient {
@@ -199,7 +199,7 @@ public class IndexClient {
 							i++;
 						}
 						Log.e(TAG, "Size: " + size + " iterator: " + i);
-						mService.buildIndex(filePath, tmp, init, length);
+						mService.buildIndex(id, filePath, tmp, init, length);
 					}
 					if (listener != null) {
 						listener.indexCreated(filePath);
@@ -315,7 +315,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					PageResult[] results = mService.find(id, filePath, type, text, hits, page, set);
+					SearchResult results = mService.find(id, filePath, type, text, hits, page, set);
 					if(results != null)
 					listener.searchCompleted(text, results);
 					Log.i(TAG, "Done Searching for " + text);
@@ -355,7 +355,7 @@ public class IndexClient {
 			public void run() {
 				try {
 					Log.i(TAG, "Searching for " + text);
-					PageResult[] results = mService.findIn(id, filePath, type, text, hits, set);
+					SearchResult results = mService.findIn(id, filePath, type, text, hits, set);
 					if(results != null) {
 						listener.searchCompleted(text, results);
 					}
