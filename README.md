@@ -4,14 +4,14 @@ AIS Client Library
 
 (C) 2014 Dracode Software
 
-Version: 1.0.0
+Version: 1.0
 
 Authors: Benjamin Winger
 
-A library that allows applications to connect to the [Android Indexing Service](https://bitbucket.org/benjaminwinger/android-indexing-service) (AIS).
+A library that allows applications to connect to the [Android Indexing Service](https://github.com/dracode/Android-Indexing-Service) (AIS).
 
 ## Compiling ##
-AIS Client Library is built using the Apache Maven build tool. Simply download the source and execute
+AIS Client Library is built using the Apache Maven build tool. Simply download the source and execute from the root source directory:
 
 ```
 #!bash
@@ -19,6 +19,7 @@ AIS Client Library is built using the Apache Maven build tool. Simply download t
 mvn clean install
 ```
 This will generate a jar file in the target directory which can be used in other applications.
+Compiled jar files are also uploaded with each release.
 
 ## Current Features ##
 The current version of AIS Client Library includes the following features:
