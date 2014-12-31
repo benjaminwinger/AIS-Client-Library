@@ -20,10 +20,6 @@
 
 package ca.dracode.ais.indexclient;
 
-import java.util.List;
-
-import ca.dracode.ais.indexdata.SearchResult;
-
 public interface IndexListener {
     /**
      * Called when an index has been created using the IndexClient.buildIndex() function
@@ -47,20 +43,6 @@ public interface IndexListener {
      * @param unloaded true if the file was previously loaded, false otherwise
      */
     public void indexUnloaded(String path, boolean unloaded);
-
-    /**
-     * Called when the SearchService has completed a content search
-     * @param text The term that was originally searched for
-     * @param pageResults A list of search results
-     */
-    public void searchCompleted(String text, SearchResult pageResults);
-
-    /**
-     * Called when the SearchService has completed a filename search
-     * @param text The term that was originally searched for
-     * @param results A list of search results
-     */
-    public void searchCompleted(String text, List<String> results);
 
     /**
      * Called if there was an unexpected error while searching

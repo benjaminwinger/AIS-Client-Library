@@ -24,7 +24,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ca.dracode</groupId>
     <artifactId>AISCL</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
     <packaging>apk</packaging>
     <name>AndroidIndexingServiceClientLibrary</name>
     <dependencies>

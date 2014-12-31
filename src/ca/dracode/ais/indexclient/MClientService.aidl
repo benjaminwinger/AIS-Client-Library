@@ -33,11 +33,11 @@ interface MClientService {
 	 * @param page - the page to be returned from the file
 	 * @return - A string containing all of the words on the page
 	 */
-	String getWordsForPage(int page);
+	String getWordsForPage(int page, String path);
 	
 	/**
 	 * Gets the number of pages in the file previously specified in loadFile(String path)
 	 * @return - the number of pages in the file specified at loadFile(String path)
 	 */
-	int getPageCount();
+	int getPageCount(String path);
 }

@@ -54,12 +54,12 @@ public interface ClientService {
 	 * @param page the page of the file to be returned
 	 * @return A string containing all of the words on the page
 	 */
-	public String getWordsForPage(int page);
+	public String getWordsForPage(int page, String path);
 
 	/**
 	 * @return the number of pages in the file specified at loadFile(String path)
 	 */
-	public int getPageCount();
+	public int getPageCount(String path);
 
 
     /**

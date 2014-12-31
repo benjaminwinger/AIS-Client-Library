@@ -172,10 +172,8 @@ public class IndexClient {
      *     In most cases the file will have already been indexed by the indexer.
      * </p>
      * @param filePath Path of the file to be indexed
-     * @param contents Contents of the file split by page in the form of an List
      */
-    public void buildIndex(final String filePath,
-                           final List<String> contents) {
+    public void buildIndex(final String filePath) {
 		/** TODO - Tell client if the index is unbuildable due to the lock being in place.
 		 * 		Will not be able to send Strings in contents that are larger than 256KB 
 		 * 		In the event of this, it should either try to send them as-is and hope it 
@@ -188,22 +186,11 @@ public class IndexClient {
 			@Override
 			public void run() {
 				try {
-					int length = contents.size();
-					for (int i = 0; i < length; i++) {
-						int size = 0;
-						ArrayList<String> tmp = new ArrayList<String>();
-						int init = i;
-						while (i < length && size + contents.get(i).getBytes().length < 256 * 1024) {
-							tmp.add(contents.get(i));
-							size += contents.get(i).getBytes().length;
-							i++;
-						}
-						Log.e(TAG, "Size: " + size + " iterator: " + i);
-						mService.buildIndex(id, filePath, tmp, init, length);
-					}
-					if (listener != null) {
-						listener.indexCreated(filePath);
-					}
+					if(mService.buildIndex(id, filePath) != -1) {
+                        if(listener != null) {
+                            listener.indexCreated(filePath);
+                        }
+                    }
 				} catch (RemoteException e) {
 					Log.e(TAG, "Error while closing buffered reader", e);
 				}
@@ -224,7 +211,7 @@ public class IndexClient {
 						+ " Service " + mService);
 				try {
 					if (listener != null) {
-						Log.e(TAG, "Trying to load from service " + mService);
+						Log.i(TAG, "Trying to load from service " + mService);
 						listener.indexLoaded(filePath, mService.load(filePath));
 					} else {
 						mService.load(filePath);
@@ -262,8 +249,8 @@ public class IndexClient {
      * @param filePath Path of the file to be searched
      * @param kill If true, cancels previous searches before searching
      */
-    public void search(final String text, final String filePath, boolean kill) {
-        this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, 10, 0, kill);
+    public SearchResult search(final String text, final String filePath, boolean kill) {
+        return this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, 10, 0, kill);
 	}
 
     /**
@@ -273,14 +260,14 @@ public class IndexClient {
      * @param hits Maximum results to be generated
      * @param kill If true, cancels previous searches before searching
      */
-    public void search(final String text, final String filePath, int hits, boolean kill) {
-        this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, hits, 0, kill);
+    public SearchResult search(final String text, final String filePath, int hits, boolean kill) {
+        return this.search(text, IndexClient.QUERY_STANDARD, filePath, 0, hits, 0, kill);
 	}
 
     /**
      * Cancels any searches that are in operation
      */
-    public void cancelSearch(int id) {
+    public void cancelSearch() {
         try {
             mService.interrupt(id);
 		} catch (RemoteException e){
@@ -299,34 +286,23 @@ public class IndexClient {
      *            hits
      * @param kill If true, cancels previous searches before searching
      */
-    public void search(final String text, final int type, final String filePath, final int page,
+    public SearchResult search(final String text, final int type, final String filePath,
+                            final int page,
                        final int hits, final int set, boolean kill) {
-		if(kill && t != null){
-			cancelSearch(id);
-			try {
-				while (t != null) Thread.sleep(1);
-			} catch (InterruptedException e){
-				Log.e(TAG, "", e);
-			}
+		if(kill){
+			cancelSearch();
 		}
-		t = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					Log.i(TAG, "Searching for " + text);
-					SearchResult results = mService.find(id, filePath, type, text, hits, page, set);
-					if(results != null)
-					listener.searchCompleted(text, results);
-					Log.i(TAG, "Done Searching for " + text);
-				} catch (RemoteException e) {
-					Log.e(TAG, "Error while communicating with remote service", e);
-					listener.errorWhileSearching(text, filePath);
-				}
-				t = null;
-			}
-		});
-		t.start();
+        try {
+            Log.i(TAG, "Searching for " + text);
+            SearchResult results = mService.find(id, filePath, type, text, hits, set, page);
+            if(results != null)
+                return results;
+            Log.i(TAG, "Done Searching for " + text);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Error while communicating with remote service", e);
+            listener.errorWhileSearching(text, filePath);
+        }
+        return null;
 	}
 
     /**
@@ -339,35 +315,23 @@ public class IndexClient {
      *            hits
      * @param kill If true, cancels previous searches before searching
      */
-    public void searchIn(final String text, final int type, final List<String> filePath,
+    public SearchResult searchIn(final String text, final int type, final List<String> filePath,
                          final int hits, final int set, boolean kill){
-		if(kill && t != null){
-			cancelSearch(id);
-			try {
-				while (t != null) Thread.sleep(1);
-			} catch (InterruptedException e){
-				Log.e(TAG, "", e);
-			}
-		}
-		t = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					Log.i(TAG, "Searching for " + text);
-					SearchResult results = mService.findIn(id, filePath, type, text, hits, set);
-					if(results != null) {
-						listener.searchCompleted(text, results);
-					}
-					Log.i(TAG, "Done Searching for " + text);
-				} catch (RemoteException e) {
-					Log.e(TAG, "Error while communicating with remote service", e);
-					listener.errorWhileSearching(text, filePath.toString());
-				}
-				t = null;
-			}
-		});
-		t.start();
+        if(kill){
+            cancelSearch();
+        }
+        try {
+            Log.i(TAG, "Searching for " + text);
+            SearchResult results = mService.findIn(id, filePath, type, text, hits, set);
+            if(results != null) {
+                return results;
+            }
+            Log.i(TAG, "Done Searching for " + text);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Error while communicating with remote service", e);
+            listener.errorWhileSearching(text, filePath.toString());
+        }
+        return null;
 	}
 
     /**
@@ -380,33 +344,21 @@ public class IndexClient {
      *            hits
      * @param kill If true, cancels previous searches before searching
      */
-    public void searchInPath(final String text, final int type, final List<String> filePath,
+    public List<String> searchInPath(final String text, final int type, final List<String> filePath,
                              final int hits, final int set, boolean kill){
-		if(kill && t != null){
-			cancelSearch(id);
-			try {
-				while (t != null) Thread.sleep(1);
-			} catch (InterruptedException e){
-				Log.e(TAG, "", e);
-			}
+		if(kill){
+			cancelSearch();
 		}
-		t = new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					Log.i(TAG, "Searching for " + text);
-					List<String> list = mService.findName(id, filePath, type, text, hits, set);
-					if(list != null)
-					listener.searchCompleted(text, list);
-					Log.i(TAG, "Done Searching for " + text);
-				} catch (RemoteException e) {
-					Log.e(TAG, "Error while communicating with remote service", e);
-					listener.errorWhileSearching(text, filePath.toString());
-				}
-				t = null;
-			}
-		});
-		t.start();
+        try {
+            Log.i(TAG, "Searching for " + text);
+            List<String> list = mService.findName(id, filePath, type, text, hits, set);
+            if(list != null)
+                return list;
+            Log.i(TAG, "Done Searching for " + text);
+        } catch (RemoteException e) {
+            Log.e(TAG, "Error while communicating with remote service", e);
+            listener.errorWhileSearching(text, filePath.toString());
+        }
+        return null;
 	}
 }
